@@ -1,30 +1,22 @@
 [package]
 name = "pgn-lexer"
 version = "0.2.0-alpha"
-authors = ["Lakin Wecker <lakin@structuredabstraction.com>"]
+authors = ["Lakin Wecker <lakin@structuredabstraction.com>", "datawater"]
 edition = "2018"
 description = "A lexer for PGN files for chess. Provides an iterator over the tokens from a byte stream."
-# documentation = "..."
-# homepage = "..."
-repository = "https://github.com/lakinwecker/pgn-lexer"
+repository = "https://github.com/datawater/pgn-lexer"
 readme = "README.md"
 keywords = ["chess", "pgn", "lexer", "tokenizer"]
 categories = ["parser-implementations"]
 license = " GPL-3.0"
 exclude = ["examples/*"]
 
-
-[dependencies]
-lazy_static = "^0.2"
-
 [dependencies.nom]
-version = "6"
+version = "7.1.3"
 features = []
 
 [dev-dependencies]
-memmap = "0.5.2"
-clap = "2.26.0"
-criterion = "0.3"
+criterion = "0.5.1"
 
 [[bench]]
 name = "parsing"
