@@ -700,6 +700,7 @@ impl<'a> Iterator for PGNTokenIterator<'a> {
         result = or_else(result, || pgn_nag_token(i));
         result = or_else(result, || pgn_move_annotation_token(i));
         result = or_else(result, || san_move_token(i));
+        result = or_else(result, || pgn_move_number(i));
         match result {
             Ok((i, token)) => {
                 self.bytes = i;
