@@ -1,0 +1,2 @@
+# 0.2.3-alpha
+Use SmolStr instead of &[u8]. 4.8x slow down

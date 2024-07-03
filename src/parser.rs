@@ -25,43 +25,45 @@ use nom::{
     Err::{Error, Failure, Incomplete},
     IResult,
 };
+use smol_str::SmolStr;
 use std::fmt;
+use std::str::from_utf8_unchecked;
 
 ///-----------------------------------------------------------------------------
-#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
-pub enum Token<'a> {
-    Move(&'a [u8]),
-    NullMove(&'a [u8]),
-    EscapeComment(&'a [u8]),
-    NAG(&'a [u8]),
-    MoveAnnotation(&'a [u8]),
-    Result(&'a [u8]),
-    Commentary(&'a [u8]),
-    TagSymbol(&'a [u8]),
-    TagString(&'a [u8]),
-    StartVariation(&'a [u8]),
-    EndVariation(&'a [u8]),
+#[derive(Clone, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
+pub enum Token {
+    Move(SmolStr),
+    NullMove(SmolStr),
+    EscapeComment(SmolStr),
+    NAG(SmolStr),
+    MoveAnnotation(SmolStr),
+    Result(SmolStr),
+    Commentary(SmolStr),
+    TagSymbol(SmolStr),
+    TagString(SmolStr),
+    StartVariation(SmolStr),
+    EndVariation(SmolStr),
     // Number, is black
     MoveNumber(u16, bool),
 }
 
-impl<'a> fmt::Display for Token<'a> {
+impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // The `f` value implements the `Write` trait, which is what the
         // write! macro is expecting. Note that this formatting ignores the
         // various flags provided to format strings.
-        match *self {
-            Token::Move(x) => write!(f, "Move({})", String::from_utf8_lossy(x)),
-            Token::NullMove(x) => write!(f, "NullMove({})", String::from_utf8_lossy(x)),
-            Token::EscapeComment(x) => write!(f, "EscapeComment({})", String::from_utf8_lossy(x)),
-            Token::NAG(x) => write!(f, "NAG({})", String::from_utf8_lossy(x)),
-            Token::MoveAnnotation(x) => write!(f, "MoveAnnotation({})", String::from_utf8_lossy(x)),
-            Token::Result(x) => write!(f, "Result({})", String::from_utf8_lossy(x)),
-            Token::Commentary(x) => write!(f, "Commentary({})", String::from_utf8_lossy(x)),
-            Token::TagSymbol(x) => write!(f, "TagSymbol({})", String::from_utf8_lossy(x)),
-            Token::TagString(x) => write!(f, "TagString({})", String::from_utf8_lossy(x)),
-            Token::StartVariation(x) => write!(f, "StartVariation({})", String::from_utf8_lossy(x)),
-            Token::EndVariation(x) => write!(f, "EndVariation({})", String::from_utf8_lossy(x)),
+        match self {
+            Token::Move(x) => write!(f, "Move({})", x),
+            Token::NullMove(x) => write!(f, "NullMove({})", x),
+            Token::EscapeComment(x) => write!(f, "EscapeComment({})", x),
+            Token::NAG(x) => write!(f, "NAG({})", x),
+            Token::MoveAnnotation(x) => write!(f, "MoveAnnotation({})", x),
+            Token::Result(x) => write!(f, "Result({})", x),
+            Token::Commentary(x) => write!(f, "Commentary({})", x),
+            Token::TagSymbol(x) => write!(f, "TagSymbol({})", x),
+            Token::TagString(x) => write!(f, "TagString({})", x),
+            Token::StartVariation(x) => write!(f, "StartVariation({})", x),
+            Token::EndVariation(x) => write!(f, "EndVariation({})", x),
             Token::MoveNumber(x, is_black) => write!(f, "MoveNumber({x}, {is_black})"),
         }
     }
@@ -119,68 +121,28 @@ impl<I> ParseError<I> for PgnError<I> {
     }
 }
 
-pub fn is_0(i: u8) -> bool {
-    i == b'0'
-}
-pub fn is_1(i: u8) -> bool {
-    i == b'1'
-}
-pub fn is_2(i: u8) -> bool {
-    i == b'2'
-}
-pub fn is_capture(i: u8) -> bool {
-    i == b'x'
-}
-pub fn is_dash(i: u8) -> bool {
-    i == b'-'
-}
-pub fn is_digit(i: u8) -> bool {
-    i >= b'0' && i <= b'9'
-}
-pub fn is_equals(i: u8) -> bool {
-    i == b'='
-}
-pub fn is_file(i: u8) -> bool {
-    i >= b'a' && i <= b'h'
-}
-pub fn is_letter(i: u8) -> bool {
-    is_lowercase_letter(i) || is_uppercase_letter(i)
-}
-pub fn is_lowercase_letter(i: u8) -> bool {
-    i >= b'a' && i <= b'z'
-}
-pub fn is_o(i: u8) -> bool {
-    i == b'O'
-}
-pub fn is_period(i: u8) -> bool {
-    i == b'.'
-}
-pub fn is_piece(i: u8) -> bool {
-    i == b'R' || i == b'N' || i == b'B' || i == b'Q' || i == b'K'
-}
-pub fn is_plus_or_hash(i: u8) -> bool {
-    i == b'#' || i == b'+'
-}
-pub fn is_rank(i: u8) -> bool {
-    i >= b'1' && i <= b'8'
-}
-pub fn is_slash(i: u8) -> bool {
-    i == b'/'
-}
-pub fn is_space(i: u8) -> bool {
-    i == b' '
-}
-pub fn is_star(i: u8) -> bool {
-    i == b'*'
-}
-pub fn is_uppercase_letter(i: u8) -> bool {
-    i >= b'A' && i <= b'Z'
-}
-pub fn is_whitespace(i: u8) -> bool {
-    i == b' ' || i == b'\n' || i == b'\r' || i == b'\t'
-}
-pub fn is_zero(i: u8) -> bool {
-    i == b'0'
+nofmt::pls! {
+    pub fn is_lowercase_letter(i: u8) -> bool {i >= b'a' && i <= b'z'}
+    pub fn is_plus_or_hash(i: u8)     -> bool {i == b'#' || i == b'+'}
+    pub fn is_uppercase_letter(i: u8) -> bool {i >= b'A' && i <= b'Z'}
+    pub fn is_whitespace(i: u8)       -> bool {i == b' ' || i == b'\n' || i == b'\r' || i == b'\t'}
+    pub fn is_0(i: u8)                -> bool {i == b'0'}
+    pub fn is_1(i: u8)                -> bool {i == b'1'}
+    pub fn is_2(i: u8)                -> bool {i == b'2'}
+    pub fn is_capture(i: u8)          -> bool {i == b'x'}
+    pub fn is_dash(i: u8)             -> bool {i == b'-'}
+    pub fn is_digit(i: u8)            -> bool {i >= b'0' && i <= b'9'}
+    pub fn is_equals(i: u8)           -> bool {i == b'='}
+    pub fn is_file(i: u8)             -> bool {i >= b'a' && i <= b'h'}
+    pub fn is_letter(i: u8)           -> bool {is_lowercase_letter(i) || is_uppercase_letter(i)}
+    pub fn is_o(i: u8)                -> bool {i == b'O'}
+    pub fn is_period(i: u8)           -> bool {i == b'.'}
+    pub fn is_piece(i: u8)            -> bool {i == b'R' || i == b'N' || i == b'B' || i == b'Q' || i == b'K'}
+    pub fn is_rank(i: u8)             -> bool {i >= b'1' && i <= b'8'}
+    pub fn is_slash(i: u8)            -> bool {i == b'/'}
+    pub fn is_space(i: u8)            -> bool {i == b' '}
+    pub fn is_star(i: u8)             -> bool {i == b'*'}
+    pub fn is_zero(i: u8)             -> bool {i == b'0'}
 }
 
 macro_rules! match_character {
@@ -221,7 +183,12 @@ pub fn san_pawn_move(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
                 })
         });
     match result {
-        Some(length) => return Ok((&i[length + 1..], Token::Move(&i[0..length + 1]))),
+        Some(length) => {
+            return Ok((
+                &i[length + 1..],
+                Token::Move(unsafe { from_utf8_unchecked(&i[0..length + 1]) }.into()),
+            ))
+        }
         None => return Err(Error(PgnError::SanPawnMoveInvalid)),
     }
 }
@@ -284,7 +251,12 @@ pub fn san_piece_move(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
                 .and_then(|l2| Some(length + l2))
         });
     match result {
-        Some(length) => return Ok((&i[length + 1..], Token::Move(&i[0..length + 1]))),
+        Some(length) => {
+            return Ok((
+                &i[length + 1..],
+                Token::Move(unsafe { from_utf8_unchecked(&i[0..length + 1]) }.into()),
+            ))
+        }
         None => return Err(Error(PgnError::SanPieceMoveInvalid)),
     }
 }
@@ -302,7 +274,12 @@ pub fn uci_piece_move(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
     });
 
     match result {
-        Some(length) => return Ok((&i[length..], Token::Move(&i[0..length]))),
+        Some(length) => {
+            return Ok((
+                &i[length..],
+                Token::Move(unsafe { from_utf8_unchecked(&i[0..length]) }.into()),
+            ))
+        }
         None => return Err(Error(PgnError::UciPieceMoveInvalid)),
     }
 }
@@ -320,7 +297,12 @@ pub fn san_castles(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
                 .and_then(|extra_length| Some(length + extra_length));
         });
     match result {
-        Some(length) => return Ok((&i[length + 1..], Token::Move(&i[0..length + 1]))),
+        Some(length) => {
+            return Ok((
+                &i[length + 1..],
+                Token::Move(unsafe { from_utf8_unchecked(&i[0..length + 1]) }.into()),
+            ))
+        }
         None => return Err(Error(PgnError::SanCastlesInvalid)),
     }
 }
@@ -340,7 +322,12 @@ pub fn san_null_move(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
                 .and_then(|extra_length| Some(length + extra_length));
         });
     match result {
-        Some(length) => return Ok((&i[length + 1..], Token::NullMove(&i[0..length + 1]))),
+        Some(length) => {
+            return Ok((
+                &i[length + 1..],
+                Token::NullMove(unsafe { from_utf8_unchecked(&i[0..length + 1]) }.into()),
+            ))
+        }
         None => return Err(Error(PgnError::SanNullMoveInvalid)),
     }
 }
@@ -423,7 +410,10 @@ pub fn pgn_escape_comment_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str
     while length < i.len() && i[length] != b'\r' && i[length] != b'\n' {
         length += 1
     }
-    Ok((&i[length..], Token::EscapeComment(&i[1..length])))
+    Ok((
+        &i[length..],
+        Token::EscapeComment(unsafe { from_utf8_unchecked(&i[1..length]) }.into()),
+    ))
 }
 
 const MAX_MOVE_ANNOTATION_LENGTH: usize = 3;
@@ -441,7 +431,10 @@ pub fn pgn_move_annotation_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&st
     {
         length += 1;
     }
-    Ok((&i[length..], Token::MoveAnnotation(&i[0..length])))
+    Ok((
+        &i[length..],
+        Token::MoveAnnotation(unsafe { from_utf8_unchecked(&i[0..length]) }.into()),
+    ))
 }
 
 pub fn pgn_nag_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
@@ -454,7 +447,7 @@ pub fn pgn_nag_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
     match pgn_integer(&i[1..]) {
         Ok((_left, integer)) => Ok((
             &i[integer.len() + 1..],
-            Token::NAG(&i[1..integer.len() + 1]),
+            Token::NAG(unsafe { from_utf8_unchecked(&i[1..integer.len() + 1]) }.into()),
         )),
         Err(Incomplete(x)) => Err(Incomplete(x)),
         _ => Err(Error(PgnError::PgnNagInvalid)),
@@ -498,7 +491,12 @@ pub fn pgn_game_result_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> 
         .or_else(|| game_black_win(i))
         .or_else(|| game_draw(i));
     match result {
-        Some(length) => return Ok((&i[length..], Token::Result(&i[0..length]))),
+        Some(length) => {
+            return Ok((
+                &i[length..],
+                Token::Result(unsafe { from_utf8_unchecked(&i[0..length]) }.into()),
+            ))
+        }
         None => return Err(Error(PgnError::PgnGameResultInvalid)),
     }
 }
@@ -523,7 +521,10 @@ pub fn pgn_commentary_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
         }
     }
     // Ensure we skip over the braces.
-    Ok((&i[length + 1..], Token::Commentary(&i[1..length])))
+    Ok((
+        &i[length + 1..],
+        Token::Commentary(unsafe { from_utf8_unchecked(&i[1..length]) }.into()),
+    ))
 }
 
 pub fn remove_whitespace(i: &[u8]) -> &[u8] {
@@ -552,7 +553,10 @@ pub fn pgn_tag_symbol_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
     let i = remove_whitespace(&i[1..]);
     match pgn_symbol(i) {
         Ok((i, symbol)) => {
-            return Ok((&i[0..], Token::TagSymbol(symbol)));
+            return Ok((
+                &i[0..],
+                Token::TagSymbol(unsafe { from_utf8_unchecked(symbol) }.into()),
+            ));
         }
         Err(Incomplete(x)) => Err(Incomplete(x)),
         _ => Err(Error(PgnError::PgnTagPairInvalidSymbol)),
@@ -569,7 +573,10 @@ pub fn pgn_tag_string_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
             let i = remove_whitespace(i);
             let x = 0;
             if x < i.len() && i[x] == b']' {
-                return Ok((&i[1..], Token::TagString(string)));
+                return Ok((
+                    &i[1..],
+                    Token::TagString(unsafe { from_utf8_unchecked(string) }.into()),
+                ));
             } else {
                 return Err(Error(PgnError::PgnTagPairInvalid));
             }
@@ -632,7 +639,10 @@ pub fn pgn_start_variation_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&st
         return Err(Error(PgnError::PgnStartVariationEmpty));
     }
     if i[0] == b'(' {
-        return Ok((&i[1..], Token::StartVariation(&i[0..1])));
+        return Ok((
+            &i[1..],
+            Token::StartVariation(unsafe { from_utf8_unchecked(&i[0..1]) }.into()),
+        ));
     } else {
         return Err(Error(PgnError::PgnStartVariationInvalid));
     }
@@ -643,7 +653,10 @@ pub fn pgn_end_variation_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>
         return Err(Error(PgnError::PgnEndVariationEmpty));
     }
     if i[0] == b')' {
-        return Ok((&i[1..], Token::EndVariation(&i[0..1])));
+        return Ok((
+            &i[1..],
+            Token::EndVariation(unsafe { from_utf8_unchecked(&i[0..1]) }.into()),
+        ));
     } else {
         return Err(Error(PgnError::PgnEndVariationInvalid));
     }
@@ -669,29 +682,20 @@ pub struct PGNTokenIterator<'a> {
 
 impl<'a> PGNTokenIterator<'a> {
     pub fn new(bytes: &'a [u8]) -> PGNTokenIterator<'a> {
-        PGNTokenIterator { bytes: bytes }
+        PGNTokenIterator { bytes }
     }
 }
 
 // Implement `Iterator` for `Fibonacci`.
 // The `Iterator` trait only requires a method to be defined for the `next` element.
 impl<'a> Iterator for PGNTokenIterator<'a> {
-    type Item = Token<'a>;
+    type Item = Token;
 
-    fn next(&mut self) -> Option<Token<'a>> {
+    fn next(&mut self) -> Option<Token> {
         let i = self.bytes;
         let i = remove_whitespace(i);
         let mut result = pgn_escape_comment_token(i);
         result = or_else(result, || pgn_game_result_token(i));
-        // result = or_else(result, || match pgn_move_number(i) {
-        //     Ok((left, _)) => {
-        //         let left = remove_whitespace(left);
-        //         san_move_token(left)
-        //     }
-        //     Err(Incomplete(x)) => Err(Incomplete(x)),
-        //     Err(Error(e)) => Err(Error(e)),
-        //     Err(Failure(e)) => Err(Failure(e)),
-        // });
         result = or_else(result, || pgn_tag_symbol_token(i));
         result = or_else(result, || pgn_tag_string_token(i));
         result = or_else(result, || pgn_start_variation_token(i));
@@ -719,33 +723,48 @@ mod tests {
 
     #[test]
     fn test_san_move_pawn_single_square() {
-        assert_eq!(Ok((&b""[..], Token::Move(b"a1"))), san_move_token(b"a1"));
-        assert_eq!(Ok((&b""[..], Token::Move(b"a8"))), san_move_token(b"a8"));
-        assert_eq!(Ok((&b""[..], Token::Move(b"h1"))), san_move_token(b"h1"));
-        assert_eq!(Ok((&b""[..], Token::Move(b"h8"))), san_move_token(b"h8"));
-        assert_eq!(Ok((&b""[..], Token::Move(b"e4"))), san_move_token(b"e4"));
         assert_eq!(
-            Ok((&b" e5"[..], Token::Move(b"e4"))),
+            Ok((&b""[..], Token::Move("a1".into()))),
+            san_move_token(b"a1")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::Move("a8".into()))),
+            san_move_token(b"a8")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::Move("h1".into()))),
+            san_move_token(b"h1")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::Move("h8".into()))),
+            san_move_token(b"h8")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::Move("e4".into()))),
+            san_move_token(b"e4")
+        );
+        assert_eq!(
+            Ok((&b" e5"[..], Token::Move("e4".into()))),
             san_move_token(b"e4 e5")
         );
         assert_eq!(
-            Ok((&b"!! e5"[..], Token::Move(b"e4"))),
+            Ok((&b"!! e5"[..], Token::Move("e4".into()))),
             san_move_token(b"e4!! e5")
         );
         assert_eq!(
-            Ok((&b"!? e5"[..], Token::Move(b"e4"))),
+            Ok((&b"!? e5"[..], Token::Move("e4".into()))),
             san_move_token(b"e4!? e5")
         );
         assert_eq!(
-            Ok((&b"!? e5"[..], Token::Move(b"e4"))),
+            Ok((&b"!? e5"[..], Token::Move("e4".into()))),
             san_move_token(b"e4!? e5")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"e4=N"))),
+            Ok((&b""[..], Token::Move("e4=N".into()))),
             san_move_token(b"e4=N")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"e4=N#"))),
+            Ok((&b""[..], Token::Move("e4=N#".into()))),
             san_move_token(b"e4=N#")
         );
     }
@@ -753,61 +772,67 @@ mod tests {
     #[test]
     fn test_san_pawn_capture() {
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"bxc1"))),
+            Ok((&b""[..], Token::Move("bxc1".into()))),
             san_move_token(b"bxc1")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"axe4"))),
+            Ok((&b""[..], Token::Move("axe4".into()))),
             san_move_token(b"axe4")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"bxc1+"))),
+            Ok((&b""[..], Token::Move("bxc1+".into()))),
             san_move_token(b"bxc1+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"bxc1=R+"))),
+            Ok((&b""[..], Token::Move("bxc1=R+".into()))),
             san_move_token(b"bxc1=R+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"bxc1=R#"))),
+            Ok((&b""[..], Token::Move("bxc1=R#".into()))),
             san_move_token(b"bxc1=R#")
         );
     }
 
     #[test]
     fn test_san_move_piece_move() {
-        assert_eq!(Ok((&b""[..], Token::Move(b"Nf3"))), san_move_token(b"Nf3"));
-        assert_eq!(Ok((&b""[..], Token::Move(b"Nf6"))), san_move_token(b"Nf6"));
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Nf6+"))),
+            Ok((&b""[..], Token::Move("Nf3".into()))),
+            san_move_token(b"Nf3")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::Move("Nf6".into()))),
+            san_move_token(b"Nf6")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::Move("Nf6+".into()))),
             san_move_token(b"Nf6+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"N2f6"))),
+            Ok((&b""[..], Token::Move("N2f6".into()))),
             san_move_token(b"N2f6")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"N2f6+"))),
+            Ok((&b""[..], Token::Move("N2f6+".into()))),
             san_move_token(b"N2f6+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Ng1f3"))),
+            Ok((&b""[..], Token::Move("Ng1f3".into()))),
             san_move_token(b"Ng1f3")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Ng1f3+"))),
+            Ok((&b""[..], Token::Move("Ng1f3+".into()))),
             san_move_token(b"Ng1f3+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Rd3d1"))),
+            Ok((&b""[..], Token::Move("Rd3d1".into()))),
             san_move_token(b"Rd3d1")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Rd3d1+"))),
+            Ok((&b""[..], Token::Move("Rd3d1+".into()))),
             san_move_token(b"Rd3d1+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Rd3d1#"))),
+            Ok((&b""[..], Token::Move("Rd3d1#".into()))),
             san_move_token(b"Rd3d1#")
         );
     }
@@ -815,19 +840,19 @@ mod tests {
     #[test]
     fn test_uci_piece_move() {
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"g1f3"))),
+            Ok((&b""[..], Token::Move("g1f3".into()))),
             uci_piece_move(b"g1f3")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"d3d1"))),
+            Ok((&b""[..], Token::Move("d3d1".into()))),
             uci_piece_move(b"d3d1")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"d7d8q"))),
+            Ok((&b""[..], Token::Move("d7d8q".into()))),
             uci_piece_move(b"d7d8q")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"e7d8q"))),
+            Ok((&b""[..], Token::Move("e7d8q".into()))),
             uci_piece_move(b"e7d8q")
         );
     }
@@ -835,95 +860,98 @@ mod tests {
     #[test]
     fn test_san_move_piece_capture() {
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Nxf3"))),
+            Ok((&b""[..], Token::Move("Nxf3".into()))),
             san_move_token(b"Nxf3")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Nxf6"))),
+            Ok((&b""[..], Token::Move("Nxf6".into()))),
             san_move_token(b"Nxf6")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Nxf6+"))),
+            Ok((&b""[..], Token::Move("Nxf6+".into()))),
             san_move_token(b"Nxf6+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"N2xf6"))),
+            Ok((&b""[..], Token::Move("N2xf6".into()))),
             san_move_token(b"N2xf6")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"N2xf6+"))),
+            Ok((&b""[..], Token::Move("N2xf6+".into()))),
             san_move_token(b"N2xf6+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Ng1xf3"))),
+            Ok((&b""[..], Token::Move("Ng1xf3".into()))),
             san_move_token(b"Ng1xf3")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Ng1xf3+"))),
+            Ok((&b""[..], Token::Move("Ng1xf3+".into()))),
             san_move_token(b"Ng1xf3+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Rd3xd1"))),
+            Ok((&b""[..], Token::Move("Rd3xd1".into()))),
             san_move_token(b"Rd3xd1")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Rd3xd1+"))),
+            Ok((&b""[..], Token::Move("Rd3xd1+".into()))),
             san_move_token(b"Rd3xd1+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"Rd3xd1#"))),
+            Ok((&b""[..], Token::Move("Rd3xd1#".into()))),
             san_move_token(b"Rd3xd1#")
         );
     }
 
     #[test]
     fn test_castles() {
-        assert_eq!(Ok((&b""[..], Token::Move(b"O-O"))), san_move_token(b"O-O"));
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"O-O-O"))),
+            Ok((&b""[..], Token::Move("O-O".into()))),
+            san_move_token(b"O-O")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::Move("O-O-O".into()))),
             san_move_token(b"O-O-O")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"O-O+"))),
+            Ok((&b""[..], Token::Move("O-O+".into()))),
             san_move_token(b"O-O+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"O-O#"))),
+            Ok((&b""[..], Token::Move("O-O#".into()))),
             san_move_token(b"O-O#")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"O-O-O+"))),
+            Ok((&b""[..], Token::Move("O-O-O+".into()))),
             san_move_token(b"O-O-O+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Move(b"O-O-O#"))),
+            Ok((&b""[..], Token::Move("O-O-O#".into()))),
             san_move_token(b"O-O-O#")
         );
     }
     #[test]
     fn test_null_move() {
         assert_eq!(
-            Ok((&b""[..], Token::NullMove(b"--"))),
+            Ok((&b""[..], Token::NullMove("--".into()))),
             san_move_token(b"--")
         );
         assert_eq!(
-            Ok((&b""[..], Token::NullMove(b"--+"))),
+            Ok((&b""[..], Token::NullMove("--+".into()))),
             san_move_token(b"--+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::NullMove(b"--#"))),
+            Ok((&b""[..], Token::NullMove("--#".into()))),
             san_move_token(b"--#")
         );
         assert_eq!(
-            Ok((&b""[..], Token::NullMove(b"Z0"))),
+            Ok((&b""[..], Token::NullMove("Z0".into()))),
             san_move_token(b"Z0")
         );
         assert_eq!(
-            Ok((&b""[..], Token::NullMove(b"Z0+"))),
+            Ok((&b""[..], Token::NullMove("Z0+".into()))),
             san_move_token(b"Z0+")
         );
         assert_eq!(
-            Ok((&b""[..], Token::NullMove(b"Z0#"))),
+            Ok((&b""[..], Token::NullMove("Z0#".into()))),
             san_move_token(b"Z0#")
         );
     }
@@ -961,15 +989,15 @@ mod tests {
             pgn_escape_comment_token(b"")
         );
         assert_eq!(
-            Ok((&b"\n"[..], Token::EscapeComment(b"1234"))),
+            Ok((&b"\n"[..], Token::EscapeComment("1234".into()))),
             pgn_escape_comment_token(b"%1234\n")
         );
         assert_eq!(
-            Ok((&b"\n"[..], Token::EscapeComment(b"%234"))),
+            Ok((&b"\n"[..], Token::EscapeComment("%234".into()))),
             pgn_escape_comment_token(b"%%234\n")
         );
         assert_eq!(
-            Ok((&b"\r"[..], Token::EscapeComment(b"% 234"))),
+            Ok((&b"\r"[..], Token::EscapeComment("% 234".into()))),
             pgn_escape_comment_token(b"%% 234\r")
         );
     }
@@ -981,35 +1009,35 @@ mod tests {
             pgn_move_annotation_token(b"")
         );
         assert_eq!(
-            Ok((&b""[..], Token::MoveAnnotation(b"!"))),
+            Ok((&b""[..], Token::MoveAnnotation("!".into()))),
             pgn_move_annotation_token(b"!")
         );
         assert_eq!(
-            Ok((&b""[..], Token::MoveAnnotation(b"?"))),
+            Ok((&b""[..], Token::MoveAnnotation("?".into()))),
             pgn_move_annotation_token(b"?")
         );
         assert_eq!(
-            Ok((&b""[..], Token::MoveAnnotation(b"!!"))),
+            Ok((&b""[..], Token::MoveAnnotation("!!".into()))),
             pgn_move_annotation_token(b"!!")
         );
         assert_eq!(
-            Ok((&b""[..], Token::MoveAnnotation(b"??"))),
+            Ok((&b""[..], Token::MoveAnnotation("??".into()))),
             pgn_move_annotation_token(b"??")
         );
         assert_eq!(
-            Ok((&b""[..], Token::MoveAnnotation(b"?!"))),
+            Ok((&b""[..], Token::MoveAnnotation("?!".into()))),
             pgn_move_annotation_token(b"?!")
         );
         assert_eq!(
-            Ok((&b""[..], Token::MoveAnnotation(b"!?"))),
+            Ok((&b""[..], Token::MoveAnnotation("!?".into()))),
             pgn_move_annotation_token(b"!?")
         );
         assert_eq!(
-            Ok((&b" e4"[..], Token::MoveAnnotation(b"!?"))),
+            Ok((&b" e4"[..], Token::MoveAnnotation("!?".into()))),
             pgn_move_annotation_token(b"!? e4")
         );
         assert_eq!(
-            Ok((&b" e4"[..], Token::MoveAnnotation(b"!??"))),
+            Ok((&b" e4"[..], Token::MoveAnnotation("!??".into()))),
             pgn_move_annotation_token(b"!?? e4")
         );
     }
@@ -1017,10 +1045,16 @@ mod tests {
     #[test]
     fn test_pgn_nag_token() {
         assert_eq!(Err(Error(PgnError::PgnNagEmpty)), pgn_nag_token(b""));
-        assert_eq!(Ok((&b""[..], Token::NAG(b"1234"))), pgn_nag_token(b"$1234"));
-        assert_eq!(Ok((&b""[..], Token::NAG(b"234"))), pgn_nag_token(b"$234"));
         assert_eq!(
-            Ok((&b" e4"[..], Token::NAG(b"234"))),
+            Ok((&b""[..], Token::NAG("1234".into()))),
+            pgn_nag_token(b"$1234")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::NAG("234".into()))),
+            pgn_nag_token(b"$234")
+        );
+        assert_eq!(
+            Ok((&b" e4"[..], Token::NAG("234".into()))),
             pgn_nag_token(b"$234 e4")
         );
     }
@@ -1044,19 +1078,19 @@ mod tests {
             pgn_game_result_token(b"")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Result(b"1-0"))),
+            Ok((&b""[..], Token::Result("1-0".into()))),
             pgn_game_result_token(b"1-0")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Result(b"0-1"))),
+            Ok((&b""[..], Token::Result("0-1".into()))),
             pgn_game_result_token(b"0-1")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Result(b"1/2-1/2"))),
+            Ok((&b""[..], Token::Result("1/2-1/2".into()))),
             pgn_game_result_token(b"1/2-1/2")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Result(b"*"))),
+            Ok((&b""[..], Token::Result("*".into()))),
             pgn_game_result_token(b"*")
         );
     }
@@ -1067,11 +1101,11 @@ mod tests {
             pgn_commentary_token(b"")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Commentary(b"this is a comment"))),
+            Ok((&b""[..], Token::Commentary("this is a comment".into()))),
             pgn_commentary_token(b"{this is a comment}")
         );
         assert_eq!(
-            Ok((&b""[..], Token::Commentary(b"this is a\n comment"))),
+            Ok((&b""[..], Token::Commentary("this is a\n comment".into()))),
             pgn_commentary_token(b"{this is a\n comment}")
         );
     }
@@ -1082,11 +1116,11 @@ mod tests {
             pgn_tag_symbol_token(b"")
         );
         assert_eq!(
-            Ok((&b" \"?\"]"[..], Token::TagSymbol(b"Event"))),
+            Ok((&b" \"?\"]"[..], Token::TagSymbol("Event".into()))),
             pgn_tag_symbol_token(b"[Event \"?\"]")
         );
         assert_eq!(
-            Ok((&b" \"Tony Rotella\"]"[..], Token::TagSymbol(b"Event"))),
+            Ok((&b" \"Tony Rotella\"]"[..], Token::TagSymbol("Event".into()))),
             pgn_tag_symbol_token(b"[Event \"Tony Rotella\"]")
         );
     }
@@ -1097,15 +1131,15 @@ mod tests {
             pgn_tag_string_token(b"")
         );
         assert_eq!(
-            Ok((&b""[..], Token::TagString(b"?"))),
+            Ok((&b""[..], Token::TagString("?".into()))),
             pgn_tag_string_token(b"\"?\"]")
         );
         assert_eq!(
-            Ok((&b""[..], Token::TagString(b"Tony Rotella"))),
+            Ok((&b""[..], Token::TagString("Tony Rotella".into()))),
             pgn_tag_string_token(b"\"Tony Rotella\"]")
         );
         assert_eq!(
-            Ok((&b""[..], Token::TagString(b"2016.05.22"))),
+            Ok((&b""[..], Token::TagString("2016.05.22".into()))),
             pgn_tag_string_token(b"\"2016.05.22\"]")
         );
     }
@@ -1115,11 +1149,26 @@ mod tests {
             Err(Error(PgnError::PgnMoveNumberEmpty)),
             pgn_move_number(b"")
         );
-        assert_eq!(Ok((&b""[..], Token::MoveNumber(1, false))), pgn_move_number(b"1"));
-        assert_eq!(Ok((&b""[..], Token::MoveNumber(2, false))), pgn_move_number(b"2."));
-        assert_eq!(Ok((&b""[..], Token::MoveNumber(49, true))), pgn_move_number(b"49..."));
-        assert_eq!(Ok((&b"."[..], Token::MoveNumber(3, true))), pgn_move_number(b"3...."));
-        assert_eq!(Ok((&b"."[..], Token::MoveNumber(3, true))), pgn_move_number(b"3 ...."));
+        assert_eq!(
+            Ok((&b""[..], Token::MoveNumber(1, false))),
+            pgn_move_number(b"1")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::MoveNumber(2, false))),
+            pgn_move_number(b"2.")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::MoveNumber(49, true))),
+            pgn_move_number(b"49...")
+        );
+        assert_eq!(
+            Ok((&b"."[..], Token::MoveNumber(3, true))),
+            pgn_move_number(b"3....")
+        );
+        assert_eq!(
+            Ok((&b"."[..], Token::MoveNumber(3, true))),
+            pgn_move_number(b"3 ....")
+        );
     }
     #[test]
     fn test_pgn_start_variation_token() {
@@ -1128,11 +1177,11 @@ mod tests {
             pgn_start_variation_token(b"")
         );
         assert_eq!(
-            Ok((&b""[..], Token::StartVariation(b"("))),
+            Ok((&b""[..], Token::StartVariation("(".into()))),
             pgn_start_variation_token(b"(")
         );
         assert_eq!(
-            Ok((&b" 1."[..], Token::StartVariation(b"("))),
+            Ok((&b" 1."[..], Token::StartVariation("(".into()))),
             pgn_start_variation_token(b"( 1.")
         );
     }
@@ -1143,11 +1192,11 @@ mod tests {
             pgn_end_variation_token(b"")
         );
         assert_eq!(
-            Ok((&b""[..], Token::EndVariation(b")"))),
+            Ok((&b""[..], Token::EndVariation(")".into()))),
             pgn_end_variation_token(b")")
         );
         assert_eq!(
-            Ok((&b" 1."[..], Token::EndVariation(b")"))),
+            Ok((&b" 1."[..], Token::EndVariation(")".into()))),
             pgn_end_variation_token(b") 1.")
         );
     }
@@ -1180,20 +1229,23 @@ Rxf3 41. Bxf3 Z0 42. Ke1 Qh1+ 1-0"[..],
         // 42 full moves (84 tokens)
         // 1 result
         assert_eq!(results.len(), 24 + 84 + 1);
-        assert_eq!(results[0], Token::TagSymbol(b"Event"));
-        assert_eq!(results[1], Token::TagString(b"World Senior Teams +50"));
-        assert_eq!(results[2], Token::TagSymbol(b"Site"));
-        assert_eq!(results[3], Token::TagString(b"Radebeul GER"));
-        assert_eq!(results[4], Token::TagSymbol(b"Date"));
-        assert_eq!(results[5], Token::TagString(b"2016.07.03"));
-        assert_eq!(results[6], Token::TagSymbol(b"Round"));
-        assert_eq!(results[7], Token::TagString(b"8.2"));
+        assert_eq!(results[0], Token::TagSymbol("Event".into()));
+        assert_eq!(
+            results[1],
+            Token::TagString("World Senior Teams +50".into())
+        );
+        assert_eq!(results[2], Token::TagSymbol("Site".into()));
+        assert_eq!(results[3], Token::TagString("Radebeul GER".into()));
+        assert_eq!(results[4], Token::TagSymbol("Date".into()));
+        assert_eq!(results[5], Token::TagString("2016.07.03".into()));
+        assert_eq!(results[6], Token::TagSymbol("Round".into()));
+        assert_eq!(results[7], Token::TagString("8.2".into()));
 
         let last = results.len() - 1;
-        assert_eq!(results[last], Token::Result(b"1-0"));
-        assert_eq!(results[last - 1], Token::Move(b"Qh1+"));
-        assert_eq!(results[last - 2], Token::Move(b"Ke1"));
-        assert_eq!(results[last - 3], Token::NullMove(b"Z0"));
+        assert_eq!(results[last], Token::Result("1-0".into()));
+        assert_eq!(results[last - 1], Token::Move("Qh1+".into()));
+        assert_eq!(results[last - 2], Token::Move("Ke1".into()));
+        assert_eq!(results[last - 3], Token::NullMove("Z0".into()));
     }
 
     // #[test]
@@ -1216,19 +1268,19 @@ Rxf3 41. Bxf3 Z0 42. Ke1 Qh1+ 1-0"[..],
 
 1. e4 { [%eval 0.26] } 1... b6 { [%eval 0.51] } 2. Nc3 { [%eval 0.51] } 2... Bb7 { [%eval 0.52] } 3. Nf3 { [%eval 0.24] } 3... e6 { [%eval 0.22] } 4. d4 { [%eval 0.29] } 4... d5 { [%eval 0.7] } 5. e5?! { [%eval 0.19] } 5... Ne7 { [%eval 0.29] } 6. Bb5+ { [%eval 0.36] } 6... c6 { [%eval 0.37] } 7. Bd3 { [%eval -0.01] } 7... Nd7?! { [%eval 0.64] } 8. O-O { [%eval 0.58] } 8... g6 { [%eval 0.61] } 9. Bg5 { [%eval 0.47] } 9... h6 { [%eval 0.55] } 10. Be3 { [%eval 0.52] } 10... Qc7 { [%eval 0.81] } 11. Re1 { [%eval 0.83] } 11... O-O-O { [%eval 1.14] } 12. a4 { [%eval 1.0] } 12... g5?! { [%eval 1.51] } 13. a5 { [%eval 1.54] } 13... b5 { [%eval 1.91] } 14. a6 { [%eval 1.89] } 14... Ba8 { [%eval 2.22] } 15. b3?! { [%eval 1.58] } 15... Nb6 { [%eval 1.86] } 16. Ne2 { [%eval 1.77] } 16... Nf5 { [%eval 1.67] } 17. Bd2? { [%eval 0.11] } 17... g4 { [%eval 0.17] } 18. Bxf5 { [%eval 0.24] } 18... gxf3 { [%eval 0.43] } 19. Nf4 { [%eval 0.0] } 19... exf5 { [%eval 0.0] } 20. Qxf3 { [%eval 0.0] } 20... Kb8 { [%eval 0.33] } 21. Ba5 { [%eval -0.11] } 21... Rg8 { [%eval 0.25] } 22. e6? { [%eval -1.27] } 22... fxe6?? { [%eval 2.58] } 23. Nxe6 { [%eval 2.48] } 23... Qd6 { [%eval 2.5] } 24. Nxd8 { [%eval 2.47] } 24... Qxd8 { [%eval 2.18] } 25. Bxb6 { [%eval 2.05] } 25... Qxb6?? { [%eval #13] } 26. Re8+ { [%eval #13] } 26... Kc7 { [%eval #13] } 27. Qf4+?! { [%eval 10.37] } 27... Kd7 { [%eval 28.14] } 28. Rxa8 { [%eval 23.16] } 28... Bd6?! { [%eval #5] } 29. Qxh6?? { [%eval 0.0] } 29... Rxa8 { [%eval 0.0] } 30. Qg7+?! { [%eval -0.77] } 30... Kc8?? { [%eval 8.15] } 31. Re1 { [%eval 7.62] } 31... Qd8? { [%eval #1] } 32. Qb7# 1-0"[..]);
         let results: Vec<Token> = results.collect();
-        assert_eq!(results[0], Token::TagSymbol(b"Event"));
-        assert_eq!(results[1], Token::TagString(b"Rated Blitz game"));
-        assert_eq!(results[2], Token::TagSymbol(b"Site"));
+        assert_eq!(results[0], Token::TagSymbol("Event".into()));
+        assert_eq!(results[1], Token::TagString("Rated Blitz game".into()));
+        assert_eq!(results[2], Token::TagSymbol("Site".into()));
         assert_eq!(
             results[3],
-            Token::TagString(b"https://lichess.org/oUDzbB2j")
+            Token::TagString("https://lichess.org/oUDzbB2j".into())
         );
 
         let last = results.len() - 1;
-        assert_eq!(results[last], Token::Result(b"1-0"));
-        assert_eq!(results[last - 1], Token::Move(b"Qb7#"));
-        assert_eq!(results[last - 2], Token::Commentary(b" [%eval #1] "));
-        assert_eq!(results[last - 3], Token::MoveAnnotation(b"?"));
-        assert_eq!(results[last - 4], Token::Move(b"Qd8"));
+        assert_eq!(results[last], Token::Result("1-0".into()));
+        assert_eq!(results[last - 1], Token::Move("Qb7#".into()));
+        assert_eq!(results[last - 2], Token::Commentary(" [%eval #1] ".into()));
+        assert_eq!(results[last - 3], Token::MoveAnnotation("?".into()));
+        assert_eq!(results[last - 4], Token::Move("Qd8".into()));
     }
 }

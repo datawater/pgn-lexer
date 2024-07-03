@@ -5,7 +5,7 @@ pub fn bench_parse_san_move_null(c: &mut Criterion) {
     c.bench_function("san_move_token_null", |b| {
         b.iter(|| {
             assert_eq!(
-                Ok((&b""[..], Token::NullMove(b"--#"))),
+                Ok((&b""[..], Token::NullMove("--#".into()))),
                 san_move_token(black_box(b"--#"))
             )
         })
@@ -16,7 +16,7 @@ pub fn bench_parse_san_move_castle_queen_side(c: &mut Criterion) {
     c.bench_function("san_move_castle_queen_side", |b| {
         b.iter(|| {
             assert_eq!(
-                Ok((&b""[..], Token::Move(b"O-O-O"))),
+                Ok((&b""[..], Token::Move("O-O-O".into()))),
                 san_move_token(b"O-O-O")
             );
         })
@@ -26,7 +26,10 @@ pub fn bench_parse_san_move_castle_queen_side(c: &mut Criterion) {
 pub fn bench_parse_san_move_castle_king_side(c: &mut Criterion) {
     c.bench_function("san_move_castle_king_side", |b| {
         b.iter(|| {
-            assert_eq!(Ok((&b""[..], Token::Move(b"O-O"))), san_move_token(b"O-O"));
+            assert_eq!(
+                Ok((&b""[..], Token::Move("O-O".into()))),
+                san_move_token(b"O-O")
+            );
         })
     });
 }
@@ -35,7 +38,7 @@ pub fn bench_parse_san_move_simple_capture(c: &mut Criterion) {
     c.bench_function("san_move_simple_capture", |b| {
         b.iter(|| {
             assert_eq!(
-                Ok((&b""[..], Token::Move(b"bxc2"))),
+                Ok((&b""[..], Token::Move("bxc2".into()))),
                 san_move_token(b"bxc2")
             );
         })
@@ -45,7 +48,10 @@ pub fn bench_parse_san_move_simple_capture(c: &mut Criterion) {
 pub fn bench_parse_san_move_simple(c: &mut Criterion) {
     c.bench_function("san_move_simple", |b| {
         b.iter(|| {
-            assert_eq!(Ok((&b""[..], Token::Move(b"e4"))), san_move_token(b"e4"));
+            assert_eq!(
+                Ok((&b""[..], Token::Move("e4".into()))),
+                san_move_token(b"e4")
+            );
         })
     });
 }
@@ -54,7 +60,7 @@ pub fn bench_parse_san_capture_promotion(c: &mut Criterion) {
     c.bench_function("san_capture_promotion", |b| {
         b.iter(|| {
             assert_eq!(
-                Ok((&b""[..], Token::Move(b"bxc1=R"))),
+                Ok((&b""[..], Token::Move("bxc1=R".into()))),
                 san_move_token(b"bxc1=R")
             );
         })
@@ -65,7 +71,7 @@ pub fn bench_parse_san_move_complicated(c: &mut Criterion) {
     c.bench_function("san_move_complicated", |b| {
         b.iter(|| {
             assert_eq!(
-                Ok((&b""[..], Token::Move(b"bxc1=R+"))),
+                Ok((&b""[..], Token::Move("bxc1=R+".into()))),
                 san_move_token(b"bxc1=R+")
             );
         })
