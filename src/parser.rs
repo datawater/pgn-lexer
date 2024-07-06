@@ -41,9 +41,9 @@ pub enum Token {
     NAG(SS),
     MoveAnnotation(SS),
     Result(SS),
-    Commentary(SS),
-    TagSymbol(SS),
-    TagString(SS),
+    Commentary(String),
+    TagSymbol(String),
+    TagString(String),
     StartVariation(SS),
     EndVariation(SS),
     // Number, is black
@@ -529,7 +529,7 @@ pub fn pgn_commentary_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
     // Ensure we skip over the braces.
     Ok((
         &i[length + 1..],
-        Token::Commentary(SS::new_inline_from_ascii(length - 1, &i[1..length])),
+        Token::Commentary(unsafe { std::str::from_utf8_unchecked(&i[1..length]) }.into()),
     ))
 }
 
@@ -561,7 +561,7 @@ pub fn pgn_tag_symbol_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
         Ok((i, symbol)) => {
             return Ok((
                 &i[0..],
-                Token::TagSymbol(SS::new_inline_from_ascii(symbol.len(), symbol)),
+                Token::TagSymbol(unsafe { std::str::from_utf8_unchecked(symbol) }.into()),
             ));
         }
         Err(Incomplete(x)) => Err(Incomplete(x)),
@@ -581,7 +581,7 @@ pub fn pgn_tag_string_token(i: &[u8]) -> IResult<&[u8], Token, PgnError<&str>> {
             if x < i.len() && i[x] == b']' {
                 return Ok((
                     &i[1..],
-                    Token::TagString(SS::new_inline_from_ascii(string.len(), string)),
+                    Token::TagString(unsafe { std::str::from_utf8_unchecked(string) }.into()),
                 ));
             } else {
                 return Err(Error(PgnError::PgnTagPairInvalid));
