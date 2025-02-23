@@ -27,8 +27,12 @@ use nom::{
 };
 use std::fmt;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 ///-----------------------------------------------------------------------------
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Token<'a> {
     Move(&'a [u8]),
     NullMove(&'a [u8]),
@@ -1115,11 +1119,26 @@ mod tests {
             Err(Error(PgnError::PgnMoveNumberEmpty)),
             pgn_move_number(b"")
         );
-        assert_eq!(Ok((&b""[..], Token::MoveNumber(1, false))), pgn_move_number(b"1"));
-        assert_eq!(Ok((&b""[..], Token::MoveNumber(2, false))), pgn_move_number(b"2."));
-        assert_eq!(Ok((&b""[..], Token::MoveNumber(49, true))), pgn_move_number(b"49..."));
-        assert_eq!(Ok((&b"."[..], Token::MoveNumber(3, true))), pgn_move_number(b"3...."));
-        assert_eq!(Ok((&b"."[..], Token::MoveNumber(3, true))), pgn_move_number(b"3 ...."));
+        assert_eq!(
+            Ok((&b""[..], Token::MoveNumber(1, false))),
+            pgn_move_number(b"1")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::MoveNumber(2, false))),
+            pgn_move_number(b"2.")
+        );
+        assert_eq!(
+            Ok((&b""[..], Token::MoveNumber(49, true))),
+            pgn_move_number(b"49...")
+        );
+        assert_eq!(
+            Ok((&b"."[..], Token::MoveNumber(3, true))),
+            pgn_move_number(b"3....")
+        );
+        assert_eq!(
+            Ok((&b"."[..], Token::MoveNumber(3, true))),
+            pgn_move_number(b"3 ....")
+        );
     }
     #[test]
     fn test_pgn_start_variation_token() {
