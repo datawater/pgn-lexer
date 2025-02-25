@@ -105,6 +105,20 @@ pub fn bench_parse_game(c: &mut Criterion) {
     });
 }
 
+static TWIC_1544: &[u8] = include_bytes!("../data/twic1544.pgn");
+
+pub fn bench_iterator_next(c: &mut Criterion) {
+    let parsed = PGNTokenIterator::new(TWIC_1544);
+
+    c.bench_function("token_iterator_next", |b| {
+        b.iter(|| {
+            let mut parsed = parsed.clone();
+
+            while parsed.next().is_some() {}
+        })
+    });
+}
+
 criterion_group!(
     benches,
     bench_parse_san_move_null,
@@ -113,6 +127,7 @@ criterion_group!(
     bench_parse_san_move_simple_capture,
     bench_parse_san_move_simple,
     bench_parse_san_capture_promotion,
-    bench_parse_san_move_complicated
+    bench_parse_san_move_complicated,
+    bench_iterator_next
 );
 criterion_main!(benches);
