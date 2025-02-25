@@ -641,7 +641,7 @@ impl<'a> Iterator for PGNTokenIterator<'a> {
             b'(' => pgn_start_variation_token(i),
             b')' => pgn_end_variation_token(i),
             b'$' => pgn_nag_token(i),
-            b'0'..=b'9' => pgn_move_number(i).or_else(|_| san_move_token(i)),
+            b'0'..=b'9' => pgn_move_number(i).or_else(|_| san_move_token(i)).or_else(|_| pgn_game_result_token(i)),
             b'%' | b';' => pgn_escape_comment_token(i),
             _ => {
                 pgn_game_result_token(i)
